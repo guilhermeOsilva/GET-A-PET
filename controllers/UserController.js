@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 
 const createUserToken = require("../helpers/create-user-token");
 const getToken = require("../helpers/get-token");
+const getUserByToken = require("../helpers/get-user-by-token");
 
 module.exports = class UserController {
   static async register(req, res) {
@@ -118,15 +119,56 @@ module.exports = class UserController {
 
     if (!user) {
       res.status(422).json({
-         message: "usuario não encontrado!" 
-        });
+        message: "usuario não encontrado!",
+      });
       return;
     }
     res.status(200).json({ user });
   }
 
   static async editUser(req, res) {
-    res.status(200).json({ message: "deu certo" })
+    const token = getToken(req);
+    const user = await getUserByToken(token);
+
+    var image = "";
+
+    const { name, email, phone, password, confirmPassword } = req.body;
+
+    // validations
+    if (!name) {
+      res.status(422).json({ message: "O nome é obrigatório!" });
+      return;
+    }
+
+    user.name = name;
+
+    if (!email) {
+      res.status(422).json({ message: "O e-mail é obrigatório!" });
+      return;
+    }
+
+    // check if user exists
+    const userExists = await User.findOne({ email: email });
+
+    if (user.email !== email && userExists) {
+      res.status(422).json({ message: "Por favor, utilize outro e-mail!" });
+      return;
+    }
+
+    user.email = email;
+
+
+
+    if (!phone) {
+      res.status(422).json({ message: "O telefone é obrigatório!" });
+      return;
+    }
+
+    user.phone = phone;
+
+    // check if password match
+    if (password != confirmPassword) {
+      res.status(422).json({ error: "As senhas não conferem." });
+    }
   }
- 
 };
