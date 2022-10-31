@@ -169,6 +169,26 @@ module.exports = class UserController {
     // check if password match
     if (password != confirmPassword) {
       res.status(422).json({ error: "As senhas não conferem." });
+      return
+    } else if (password === confirmPassword && password != null) {
+
+      var salt = await bcrypt.genSalt(12);
+      const passwordHash = (await bcrypt.hash(password, salt));
+      
+      user.password = passwordHash
+    }
+    try {
+      const updatedUser = await User.findByIdAndUpdate(
+        { _id: user.id },
+        { $set: user },
+        { new: true },
+      )
+
+      res.status(200).json({ message: "Usuario atualizado com sucesso!" })
+
+    } catch (error) {
+      res.status(500).json({ message: error })
+      return;
     }
   }
 };
